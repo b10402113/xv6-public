@@ -8,6 +8,33 @@
 #include "proc.h"
 
 int
+sys_alarm(void)
+{
+  int ticks;
+  void (*handler)();
+
+  if(argint(0, &ticks) < 0)
+    return -1;
+  if(argptr(1, (char**)&handler, 1))
+    return -1;
+  proc->alarmticks = ticks;
+  proc->alarmleft = ticks; // as init
+  proc->alarmhandler = handler;
+  return 0;
+}
+
+int
+sys_date(void)
+{
+  struct rtcdate *r;
+
+  if(argptr(0, (void*)&r, sizeof(&r)) < 0)
+    return -1;
+  cmostime(r);
+  return 0;
+}
+
+int
 sys_fork(void)
 {
   return fork();
@@ -39,7 +66,7 @@ sys_kill(void)
 int
 sys_getpid(void)
 {
-  return myproc()->pid;
+  return proc->pid;
 }
 
 int
@@ -50,9 +77,11 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
-  addr = myproc()->sz;
-  if(growproc(n) < 0)
-    return -1;
+  addr = proc->sz;
+  //cprintf("sbrk didn't growproc by %d or 0x%x at 0x%x\n", n, n, addr);
+//  if(growproc(n) < 0)
+//    return -1;
+  proc->sz += n;
   return addr;
 }
 
@@ -61,13 +90,13 @@ sys_sleep(void)
 {
   int n;
   uint ticks0;
-
+  
   if(argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
   ticks0 = ticks;
   while(ticks - ticks0 < n){
-    if(myproc()->killed){
+    if(proc->killed){
       release(&tickslock);
       return -1;
     }
@@ -83,7 +112,7 @@ int
 sys_uptime(void)
 {
   uint xticks;
-
+  
   acquire(&tickslock);
   xticks = ticks;
   release(&tickslock);

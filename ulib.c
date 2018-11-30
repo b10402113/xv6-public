@@ -5,7 +5,7 @@
 #include "x86.h"
 
 char*
-strcpy(char *s, const char *t)
+strcpy(char *s, char *t)
 {
   char *os;
 
@@ -24,7 +24,7 @@ strcmp(const char *p, const char *q)
 }
 
 uint
-strlen(const char *s)
+strlen(char *s)
 {
   int n;
 
@@ -68,7 +68,7 @@ gets(char *buf, int max)
 }
 
 int
-stat(const char *n, struct stat *st)
+stat(char *n, struct stat *st)
 {
   int fd;
   int r;
@@ -93,14 +93,66 @@ atoi(const char *s)
 }
 
 void*
-memmove(void *vdst, const void *vsrc, int n)
+memmove(void *vdst, void *vsrc, int n)
 {
-  char *dst;
-  const char *src;
-
+  char *dst, *src;
+  
   dst = vdst;
   src = vsrc;
   while(n-- > 0)
     *dst++ = *src++;
   return vdst;
 }
+static void
+getc(int fd, char ** buffer){
+	int  i = 0;
+	char buf[256];	// read input into buffer
+	while(read(fd, &buf[i], 1)){
+		if((buf[i] == '\n'  || buf[i] == '\r' || buf[i] == '\v' || buf[i] == '\f')){
+			break;
+		}
+		else{
+			i++;
+		}
+	}
+	buf[i] = '\0';
+	*(buffer) = buf;
+	//printf(1, "In getc : %s", buf);
+}
+void scanf(int fd, char * fmt, ...){
+	int i = 0;
+	char c;
+	char * buf = "";	
+	int count_args = 1;
+	uint var = *((uint*)(void*)&fmt + count_args);
+	count_args++;
+	for(i = 0; fmt[i]; i++){
+		c = fmt[i] & 0xff;
+		switch(c){
+			case 's':
+				getc(fd, &buf);
+				strcpy((char *)var, buf);		
+				var = *((uint*)(void*)&fmt + count_args);
+				count_args++;
+				buf = "";	
+				break;
+			case 'c':
+				getc(fd, &buf);
+				*(char *)(var) = buf[0];	
+				buf = "";
+				var = *((uint*)(void*)&fmt + count_args);
+				count_args++;
+				break;
+			case 'd':
+				getc(fd,&buf);
+				*(int *)(var) = atoi(buf);	
+				buf = "";
+				var = *((uint*)(void*)&fmt + count_args);
+				count_args++;
+				break;
+			
+		}
+	}
+	
+}
+
