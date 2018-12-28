@@ -8,12 +8,11 @@ main(int argc, char *argv[])
   struct rtcdate r;
 
   if (date(&r)) {
-    printf(2, "date failed\n");
+    printf(2, "time failed\n");
     exit();
   }
 
-  // could do some padding or whatever but this is fine
-  printf(1, "%d-%d-%d %d:%d:%d\n",
-         r.year, r.month, r.day, r.hour, r.minute, r.second);
+  printf(1,">>> today is %d/%d/%d\n", r.year, r.month, r.day);
+  printf(1,">>> time is  %d:%d:%d\n", r.hour, r.minute, r.second);
   exit();
 }

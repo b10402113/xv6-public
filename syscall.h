@@ -20,5 +20,13 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
-#define SYS_date   22
-#define SYS_alarm  23
+#define SYS_getyear 22//###############
+#define SYS_alarm 23	//###############
+#define SYS_date 24		//###############
+#define SYS_listpid  25
+#define SYS_shutdown 26
+#define SYS_find     27
+#define SYS_cp       28
+#define SYS_sd       29
+#define SYS_rec      30
+#define SYS_rec_num  31

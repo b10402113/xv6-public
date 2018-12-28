@@ -17,7 +17,9 @@
 int
 fetchint(uint addr, int *ip)
 {
-  if(addr >= proc->sz || addr+4 > proc->sz)
+  struct proc *curproc = myproc();
+
+  if(addr >= curproc->sz || addr+4 > curproc->sz)
     return -1;
   *ip = *(int*)(addr);
   return 0;
@@ -30,14 +32,16 @@ int
 fetchstr(uint addr, char **pp)
 {
   char *s, *ep;
+  struct proc *curproc = myproc();
 
-  if(addr >= proc->sz)
+  if(addr >= curproc->sz)
     return -1;
   *pp = (char*)addr;
-  ep = (char*)proc->sz;
-  for(s = *pp; s < ep; s++)
+  ep = (char*)curproc->sz;
+  for(s = *pp; s < ep; s++){
     if(*s == 0)
       return s - *pp;
+  }
   return -1;
 }
 
@@ -45,20 +49,21 @@ fetchstr(uint addr, char **pp)
 int
 argint(int n, int *ip)
 {
-  return fetchint(proc->tf->esp + 4 + 4*n, ip);
+  return fetchint((myproc()->tf->esp) + 4 + 4*n, ip);
 }
 
 // Fetch the nth word-sized system call argument as a pointer
-// to a block of memory of size n bytes.  Check that the pointer
+// to a block of memory of size bytes.  Check that the pointer
 // lies within the process address space.
 int
 argptr(int n, char **pp, int size)
 {
   int i;
-  
+  struct proc *curproc = myproc();
+ 
   if(argint(n, &i) < 0)
     return -1;
-  if((uint)i >= proc->sz || (uint)i+size > proc->sz)
+  if(size < 0 || (uint)i >= curproc->sz || (uint)i+size > curproc->sz)
     return -1;
   *pp = (char*)i;
   return 0;
@@ -77,10 +82,8 @@ argstr(int n, char **pp)
   return fetchstr(addr, pp);
 }
 
-extern int sys_alarm(void);
 extern int sys_chdir(void);
 extern int sys_close(void);
-extern int sys_date(void);
 extern int sys_dup(void);
 extern int sys_exec(void);
 extern int sys_exit(void);
@@ -100,73 +103,64 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_getyear(void);//#############
+extern int sys_scanf(void);//#############
+extern int sys_alarm(void);//#############
+extern int sys_date(void);//#############
+extern int sys_listpid(void);
+extern int sys_shutdown(void);
+extern int sys_find(void);
+extern int sys_cp(void);
+extern int sys_sd(void);
+extern int sys_rec(void);
+extern int sys_rec_num(void);
 
 static int (*syscalls[])(void) = {
-  [SYS_alarm]   sys_alarm,
-  [SYS_date]    sys_date,
-  [SYS_fork]    sys_fork,
-  [SYS_exit]    sys_exit,
-  [SYS_wait]    sys_wait,
-  [SYS_pipe]    sys_pipe,
-  [SYS_read]    sys_read,
-  [SYS_kill]    sys_kill,
-  [SYS_exec]    sys_exec,
-  [SYS_fstat]   sys_fstat,
-  [SYS_chdir]   sys_chdir,
-  [SYS_dup]     sys_dup,
-  [SYS_getpid]  sys_getpid,
-  [SYS_sbrk]    sys_sbrk,
-  [SYS_sleep]   sys_sleep,
-  [SYS_uptime]  sys_uptime,
-  [SYS_open]    sys_open,
-  [SYS_write]   sys_write,
-  [SYS_mknod]   sys_mknod,
-  [SYS_unlink]  sys_unlink,
-  [SYS_link]    sys_link,
-  [SYS_mkdir]   sys_mkdir,
-  [SYS_close]   sys_close,
-};
-
-static char (*syscall_names[]) = {
-  [SYS_alarm]   "alarm",
-  [SYS_date]    "date",
-  [SYS_fork]    "fork",
-  [SYS_exit]    "exit",
-  [SYS_wait]    "wait",
-  [SYS_pipe]    "pipe",
-  [SYS_read]    "read",
-  [SYS_kill]    "kill",
-  [SYS_exec]    "exec",
-  [SYS_fstat]   "fstat",
-  [SYS_chdir]   "chdir",
-  [SYS_dup]     "dup",
-  [SYS_getpid]  "getpid",
-  [SYS_sbrk]    "sbrk",
-  [SYS_sleep]   "sleep",
-  [SYS_uptime]  "uptime",
-  [SYS_open]    "open",
-  [SYS_write]   "write",
-  [SYS_mknod]   "mknode",
-  [SYS_unlink]  "unlink",
-  [SYS_link]    "link",
-  [SYS_mkdir]   "mkdir",
-  [SYS_close]   "close"
+[SYS_fork]    sys_fork,
+[SYS_exit]    sys_exit,
+[SYS_wait]    sys_wait,
+[SYS_pipe]    sys_pipe,
+[SYS_read]    sys_read,
+[SYS_kill]    sys_kill,
+[SYS_exec]    sys_exec,
+[SYS_fstat]   sys_fstat,
+[SYS_chdir]   sys_chdir,
+[SYS_dup]     sys_dup,
+[SYS_getpid]  sys_getpid,
+[SYS_sbrk]    sys_sbrk,
+[SYS_sleep]   sys_sleep,
+[SYS_uptime]  sys_uptime,
+[SYS_open]    sys_open,
+[SYS_write]   sys_write,
+[SYS_mknod]   sys_mknod,
+[SYS_unlink]  sys_unlink,
+[SYS_link]    sys_link,
+[SYS_mkdir]   sys_mkdir,
+[SYS_close]   sys_close,
+[SYS_getyear] sys_getyear,//#########################
+[SYS_alarm] sys_alarm,//#########################
+[SYS_date] sys_date,//#########################
+[SYS_listpid] sys_listpid,
+[SYS_shutdown] sys_shutdown,
+[SYS_find]    sys_find,
+[SYS_cp]      sys_cp,
+[SYS_sd]      sys_sd,
+[SYS_rec]   sys_rec,
+[SYS_rec_num]   sys_rec_num,
 };
 
 void
 syscall(void)
 {
   int num;
-  (void)syscall_names; // Unused, for debugging
+  struct proc *curproc = myproc();
 
-  num = proc->tf->eax;
+  num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-    proc->tf->eax = syscalls[num]();
-//    cprintf("%s -> %d\n",
-//            syscall_names[num], proc->tf->eax);
+    curproc->tf->eax = syscalls[num]();
   } else {
     cprintf("%d %s: unknown sys call %d\n",
-            proc->pid, proc->name, num);
-    proc->tf->eax = -1;
+            curproc->pid, curproc->name, num);
+    curproc->tf->eax = -1;
   }
 }

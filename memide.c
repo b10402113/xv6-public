@@ -9,6 +9,8 @@
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
 #include "buf.h"
 
 extern uchar _binary_fs_img_start[], _binary_fs_img_size[];
@@ -30,7 +32,7 @@ ideintr(void)
   // no-op
 }
 
-// Sync buf with disk. 
+// Sync buf with disk.
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
 void
@@ -38,17 +40,17 @@ iderw(struct buf *b)
 {
   uchar *p;
 
-  if(!(b->flags & B_BUSY))
-    panic("iderw: buf not busy");
+  if(!holdingsleep(&b->lock))
+    panic("iderw: buf not locked");
   if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
     panic("iderw: nothing to do");
   if(b->dev != 1)
     panic("iderw: request not for disk 1");
-  if(b->block >= disksize)
+  if(b->blockno >= disksize)
     panic("iderw: block out of range");
 
-  p = memdisk + b->block*BSIZE;
-  
+  p = memdisk + b->blockno*BSIZE;
+
   if(b->flags & B_DIRTY){
     b->flags &= ~B_DIRTY;
     memmove(p, b->data, BSIZE);

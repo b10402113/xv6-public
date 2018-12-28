@@ -8,8 +8,6 @@
     int $T_SYSCALL; \
     ret
 
-SYSCALL(alarm)
-SYSCALL(date)
 SYSCALL(fork)
 SYSCALL(exit)
 SYSCALL(wait)
@@ -31,3 +29,13 @@ SYSCALL(getpid)
 SYSCALL(sbrk)
 SYSCALL(sleep)
 SYSCALL(uptime)
+SYSCALL(getyear)
+SYSCALL(alarm)
+SYSCALL(date)
+SYSCALL(listpid)
+SYSCALL(shutdown)
+SYSCALL(find)
+SYSCALL(cp)
+SYSCALL(sd)
+SYSCALL(rec)
+SYSCALL(rec_num)
